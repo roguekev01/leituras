@@ -1,86 +1,145 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Leitor de Código de Barras</title>
+  <meta charset="UTF-8" />
+  <title>Leitor de Códigos</title>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#000000">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f172a" />
 
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json" />
 
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
   <style>
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 15px;
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
     }
+
+    header {
+      background: #0f172a;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .container {
+      padding: 15px;
+      max-width: 420px;
+      margin: auto;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    .btn-camera {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-pdf {
+      background: #16a34a;
+      color: white;
+    }
+
     #reader {
       display: none;
-      max-width: 320px;
-      margin: 10px auto;
+      margin: 10px 0;
+      border-radius: 10px;
+      overflow: hidden;
     }
-    button {
-      padding: 12px;
-      font-size: 16px;
-      margin: 5px;
-    }
+
     ul {
-      text-align: left;
-      max-width: 320px;
-      margin: auto;
+      list-style: none;
+      padding: 0;
+      margin-top: 15px;
+    }
+
+    li {
+      background: white;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
     }
   </style>
 </head>
+
 <body>
 
-<h2>📦 Leitor de Códigos</h2>
+<header>📦 Leitor de Código de Barras</header>
 
-<button onclick="abrirCamera()">
-  <i class="fa-solid fa-camera"></i> Ler código
-</button>
+<div class="container">
 
-<button onclick="gerarPDF()">Salvar PDF</button>
+  <button class="btn-camera" onclick="abrirCamera()">
+    <i class="fa-solid fa-camera"></i> Ler código
+  </button>
 
-<div id="reader"></div>
-<ul id="lista"></ul>
+  <button class="btn-pdf" onclick="gerarPDF()">
+    <i class="fa-solid fa-file-pdf"></i> Exportar PDF
+  </button>
+
+  <div id="reader"></div>
+
+  <ul id="lista"></ul>
+</div>
 
 <script>
   const codigos = [];
-  let leitor;
+  let leitor = null;
 
   function abrirCamera() {
     document.getElementById("reader").style.display = "block";
     leitor = new Html5Qrcode("reader");
 
-    Html5Qrcode.getCameras().then(cameras => {
-      leitor.start(
-        cameras[0].id,
-        { fps: 10, qrbox: { width: 250, height: 150 } },
-        (codigo) => {
-          if (!codigos.includes(codigo)) {
-            codigos.push(codigo);
+    leitor.start(
+      { facingMode: "environment" }, // 👈 CÂMERA TRASEIRA
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 150 }
+      },
+      (codigo) => {
+        if (!codigos.includes(codigo)) {
+          codigos.push(codigo);
 
-            const li = document.createElement("li");
-            li.textContent = codigo;
-            document.getElementById("lista").appendChild(li);
+          const li = document.createElement("li");
+          li.textContent = codigo;
+          document.getElementById("lista").appendChild(li);
 
-            leitor.stop();
-            document.getElementById("reader").style.display = "none";
-          }
+          leitor.stop();
+          document.getElementById("reader").style.display = "none";
         }
-      );
+      }
+    ).catch(err => {
+      alert("Erro ao abrir câmera: " + err);
     });
   }
 
   function gerarPDF() {
+    if (codigos.length === 0) {
+      alert("Nenhum código registrado");
+      return;
+    }
+
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF();
-    pdf.text("Códigos Lidos", 10, 10);
+
+    pdf.text("Códigos de Barras", 10, 10);
 
     let y = 20;
     codigos.forEach((c, i) => {

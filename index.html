@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Leitor de Código de Barras</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 15px;
+    }
+    #reader {
+      display: none;
+      max-width: 320px;
+      margin: 10px auto;
+    }
+    button {
+      padding: 12px;
+      font-size: 16px;
+      margin: 5px;
+    }
+    ul {
+      text-align: left;
+      max-width: 320px;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+
+<h2>📦 Leitor de Códigos</h2>
+
+<button onclick="abrirCamera()">
+  <i class="fa-solid fa-camera"></i> Ler código
+</button>
+
+<button onclick="gerarPDF()">Salvar PDF</button>
+
+<div id="reader"></div>
+<ul id="lista"></ul>
+
+<script>
+  const codigos = [];
+  let leitor;
+
+  function abrirCamera() {
+    document.getElementById("reader").style.display = "block";
+    leitor = new Html5Qrcode("reader");
+
+    Html5Qrcode.getCameras().then(cameras => {
+      leitor.start(
+        cameras[0].id,
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (codigo) => {
+          if (!codigos.includes(codigo)) {
+            codigos.push(codigo);
+
+            const li = document.createElement("li");
+            li.textContent = codigo;
+            document.getElementById("lista").appendChild(li);
+
+            leitor.stop();
+            document.getElementById("reader").style.display = "none";
+          }
+        }
+      );
+    });
+  }
+
+  function gerarPDF() {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+    pdf.text("Códigos Lidos", 10, 10);
+
+    let y = 20;
+    codigos.forEach((c, i) => {
+      pdf.text(`${i + 1}. ${c}`, 10, y);
+      y += 8;
+    });
+
+    pdf.save("codigos.pdf");
+  }
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+  }
+</script>
+
+</body>
+</html>
